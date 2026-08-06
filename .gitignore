@@ -1,0 +1,16 @@
+# Environment
+.env
+venv/
+
+# ChromaDB (generated, not committed)
+chroma_db/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
