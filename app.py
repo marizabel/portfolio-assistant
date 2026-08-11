@@ -33,7 +33,6 @@ if prompt := st.chat_input("e.g. What are their main skills?"):
 
     with st.chat_message("assistant"):
         with st.spinner("Searching..."):
-            result = chain.invoke({"query": prompt})
-            response = result["result"]
+            response = chain.invoke(prompt)
             st.write(response)
             st.session_state.messages.append({"role": "assistant", "content": response})

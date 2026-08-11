@@ -4,11 +4,13 @@ and builds the question-answering chain.
 """
 
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.chains import RetrievalQA
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 from dotenv import load_dotenv
 import os
 
@@ -54,14 +56,26 @@ def get_rag_chain():
     )
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
+        model="gemini-3.5-flash",
         google_api_key=os.getenv("GOOGLE_API_KEY")
     )
 
-    chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        retriever=vectorstore.as_retriever(search_kwargs={"k": 3}),
-        return_source_documents=True
+    prompt = ChatPromptTemplate.from_template("""
+    Answer the question based only on the following context:
+    {context}
+
+    Question: {question}
+    """)
+
+    def format_docs(docs):
+        return "\n\n".join(doc.page_content for doc in docs)
+
+    chain = (
+        {"context": vectorstore.as_retriever(search_kwargs={"k": 3}) | format_docs,
+         "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
     )
     return chain
 
